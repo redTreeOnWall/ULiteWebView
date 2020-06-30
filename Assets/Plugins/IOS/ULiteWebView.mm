@@ -1,11 +1,14 @@
+#import <WebKit/WebKit.h>
 
-
-@interface ULiteWebView : NSObject<UIWebViewDelegate>
+@interface ULiteWebView : NSObject<WKUIDelegate,WKNavigationDelegate>
 {
-    UIWebView* _webView;
+    WKWebView* _webView;
     NSString* _gameObjectName;
+    WKWebViewConfiguration* _config;
 }
+
 @end
+
 
 @implementation ULiteWebView
 //注册webview
@@ -16,16 +19,19 @@
 - (void)createWebView{
     if(_webView == nil){
         UIView* view = UnityGetGLViewController().view;
-        _webView = [[UIWebView alloc] initWithFrame:view.frame];
-        _webView.delegate = self;
+         _config=[[WKWebViewConfiguration alloc] init];
+        _webView = [[WKWebView alloc] initWithFrame:view.frame configuration:_config];
+        _webView.UIDelegate = self;
+        _webView.navigationDelegate=self;
         _webView.hidden = YES;
         [view addSubview:_webView];
     }
 }
 
+
 - (void)disposeWebView{
     if(_webView != nil){
-        _webView.delegate = nil;
+        _webView.UIDelegate = nil;
         [_webView removeFromSuperview];
         _webView = nil;
     }
@@ -70,25 +76,25 @@
         return;
     }
     NSString *jsStr= [NSString stringWithFormat:@"%s(\"%s\")",funName,msg];
-    [_webView stringByEvaluatingJavaScriptFromString:jsStr];
+    WKUserScript *wkUscript=[[WKUserScript alloc] initWithSource:jsStr injectionTime:WKUserScriptInjectionTimeAtDocumentEnd forMainFrameOnly:YES];
+    [_config.userContentController addUserScript:wkUscript];
 }
 
 //捕获链接请求
-- (BOOL)webView:(UIWebView *)webView shouldStartLoadWithRequest:(NSURLRequest *)request navigationType:(UIWebViewNavigationType)navigationType
-{
-    NSString *url = [[request URL] absoluteString];
+ -(void)webView:(WKWebView *)webView decidePolicyForNavigationAction:(WKNavigationAction *)navigationAction decisionHandler:(void (^)(WKNavigationActionPolicy))decisionHandler{
+    
+     NSString *url = [navigationAction.request.URL.absoluteString stringByRemovingPercentEncoding];
+     NSLog(@"Content:%@",url);
+     UnitySendMessage([_gameObjectName UTF8String], "OnLoadingUrl", [url UTF8String]);
 
-    UnitySendMessage([_gameObjectName UTF8String], "OnLoadingUrl", [url UTF8String]);
-
-    NSRange range = [url rangeOfString:@"ulitewebview://"];
-    if(range.location != NSNotFound){
-        NSString *msg = [url substringFromIndex:range.length];
-        UnitySendMessage([_gameObjectName UTF8String], "OnJsCall", [msg UTF8String]);
-        return YES;
-    }
-    return YES;
-}
-
+   NSRange range = [url rangeOfString:@"ulitewebview://"];
+   if(range.location != NSNotFound){
+       NSString *msg = [url substringFromIndex:range.length];
+       UnitySendMessage([_gameObjectName UTF8String], "OnJsCall", [msg UTF8String]);
+       decisionHandler(WKNavigationActionPolicyCancel);
+   }else
+   {decisionHandler(WKNavigationActionPolicyAllow);}
+ }
 @end
 
 

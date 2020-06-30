@@ -70,7 +70,9 @@ namespace Jing.ULiteWebView
                 _ulite = new ULiteAndroidWebView(getFullName(this.gameObject));
 #elif UNITY_IOS
                 Debug.Log("ULiteWebView:iOS");
-                _ulite = new ULiteIosWebView(getFullName(this.gameObject));
+
+                //苹果 韩国包 暂时不用嵌入式webview
+                // _ulite = new ULiteIosWebView(getFullName(this.gameObject));
 #endif
 #endif
             }
@@ -313,6 +315,8 @@ namespace Jing.ULiteWebView
         }
     }
 
+
+#if UNITY_IOS
     class ULiteIosWebView : AULite4Platform
     {
         [DllImport("__Internal")]
@@ -356,4 +360,7 @@ namespace Jing.ULiteWebView
             _show(top, bottom, left, right);
         }
     }
+
+#endif
+
 }
