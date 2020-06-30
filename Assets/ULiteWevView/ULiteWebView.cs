@@ -71,8 +71,7 @@ namespace Jing.ULiteWebView
 #elif UNITY_IOS
                 Debug.Log("ULiteWebView:iOS");
 
-                //苹果 韩国包 暂时不用嵌入式webview
-                // _ulite = new ULiteIosWebView(getFullName(this.gameObject));
+                _ulite = new ULiteIosWebView(getFullName(this.gameObject));
 #endif
 #endif
             }
